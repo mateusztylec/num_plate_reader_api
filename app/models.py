@@ -6,5 +6,5 @@ class Vehicle(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     brand = Column(String, nullable=False)
     model = Column(String, nullable=False)
-    num_plate = Column(String, nullable=False)
+    num_plate = Column(String, nullable=False) #   TODO: num_plate as a unique/primary_key
 
