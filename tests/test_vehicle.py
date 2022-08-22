@@ -12,5 +12,8 @@ def test_post_valid_vehicle(brand, model, num_plate, client):
     assert isinstance(vehicle.id, int)
     assert res.status_code == 201
 
-# def test_get_by_wrong_id():
-#     assert get_vehicles_by_id()
+
+@pytest.mark.parametrize("id", [99, 89])
+def test_get_by_wrong_id(id, client):
+    res = client.get('/vehicles/{id}')
+    assert res.status_code == 404
