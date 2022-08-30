@@ -8,12 +8,34 @@ def test_post_valid_vehicle(brand, model, num_plate, client):
     assert vehicle.model == model
     assert vehicle.brand == brand
     assert vehicle.num_plate == num_plate
-    print(vehicle.id)
     assert isinstance(vehicle.id, int)
     assert res.status_code == 201
 
 
 @pytest.mark.parametrize("id", [99, 89])
 def test_get_by_wrong_id(id, client):
-    res = client.get('/vehicles/{id}')
+    res = client.get(f'/vehicles/{id}')
     assert res.status_code == 404
+
+
+@pytest.mark.parametrize("num_plate", ["RMI53079", "RMI12345", "RMI54321"])
+def test_get_valid_by_num_plate(num_plate, vehicles, client):  # param order does not seem to have matter
+    res = client.get(f"/vehicles/plates/{num_plate}")
+    veh = schemas.Vehicle(**res.json())
+    assert res.status_code == 200
+    assert veh.num_plate == num_plate
+
+
+@pytest.mark.parametrize("num_plate", ["1234", 313, "ssss"])
+def test_get_invalid_by_num_plate(num_plate, client, vehicles):
+    res = client.get(f"/vehicles/plates/{num_plate}")
+    assert res.status_code == 404
+
+@pytest.mark.parametrize("num_plate", ["RMI%2053079", "RMI 12345", "RMI    54321 "])
+def test_get_valid_by_num_plate_with_spaces(num_plate, client, vehicles):
+    res = client.get(f"/vehicles/plates/{num_plate}")
+    veh = schemas.Vehicle(**res.json())
+    print(res.json())
+    assert veh.num_plate == vehicles
+    assert res.status_code == 200
+

@@ -15,18 +15,28 @@ def get_db():
     finally:
         db.close()
 
-# TODO: spacja w numplate
-@app.get("/vehicles/plate/{num_plate}", response_model=schemas.Vehicle, status_code=status.HTTP_200_OK)
+"""
+You can pass num plate with or without spacebar or even with %20 pattern
+"""
+@app.get("/vehicles/plates/{num_plate}", response_model=schemas.Vehicle, status_code=status.HTTP_200_OK)
 def get_vehicle_by_num_plate(num_plate: str, db: Session = Depends(get_db)):
+    def remove(string_input):
+        return string_input.replace(" ", "")
+    print(num_plate)
+    num_plate = remove(num_plate)
     vehicle = db.query(models.Vehicle).filter(models.Vehicle.num_plate == num_plate).first()
     if not vehicle:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f"Vehicle with number plate {num_plate} does not exist")
     return vehicle
 
+@app.get("/vehicles", response_model=list[schemas.Vehicle], status_code=status.HTTP_200_OK)
+def get_vehicles(db: Session = Depends(get_db), limit: int = 5, skip: int = 0):
+    res_lst = db.query(models.Vehicle).limit(limit).offset(skip).all()
+    return res_lst
 
 @app.get("/vehicles/{id}", response_model=schemas.Vehicle, status_code=status.HTTP_200_OK)
-def get_vehicles_by_id(id: int, db: Session = Depends(get_db)):
+def get_vehicle_by_id(id: int, db: Session = Depends(get_db)):
     vehicle = db.query(models.Vehicle).filter(models.Vehicle.id == id).first()
     if not vehicle:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Vehicle with id {id} does not exist")
@@ -42,3 +52,4 @@ def create_vehicle(vehicle: schemas.Vehicle, db: Session = Depends(get_db)):
     if not vehicle_db:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wrong vehicle info")
     return vehicle_db
+
