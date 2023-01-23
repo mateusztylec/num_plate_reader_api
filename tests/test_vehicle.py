@@ -1,14 +1,15 @@
 import pytest
 from app.main import *
 from app import schemas
+from app.logs import logger
 
 @pytest.mark.parametrize("brand, model, num_plate", [("BMW", "X3", "RMI12345"), ("MERCEDES-BENZ", "G CLASS", "KK 12343"), ("JEEP", "WRANGLER", "DBV123RV")])
-def test_post_valid_vehicle(brand, model, num_plate, client):
+def test_post_valid_vehicle(brand, model, num_plate: str, client):
     res = client.post(f"/vehicles/", json={"brand": brand, "model": model, "num_plate": num_plate})
-    vehicle = schemas.VehicleCreate(**res.json())
+    vehicle = schemas.VehicleCreate(**res.json())  # rozpakowywujemy response na key=value wartosci
     assert vehicle.model == model
     assert vehicle.brand == brand
-    assert vehicle.num_plate == num_plate
+    assert vehicle.num_plate == num_plate.replace(" ","")
     assert isinstance(vehicle.id, int)
     assert res.status_code == 201
 
@@ -21,7 +22,7 @@ def test_post_vehicle_w_missing_values_v1(brand, model, num_plate, client):
 
     assert vehicle.model == model
     assert vehicle.brand == brand
-    assert vehicle.num_plate == num_plate
+    assert vehicle.num_plate == num_plate.replace(" ","")
     assert isinstance(vehicle.id, int)
     assert res.status_code == 201
 
@@ -35,7 +36,7 @@ def test_post_vehicle_w_missing_values_v2(brand, model, num_plate, client):
 
     assert vehicle.model == model
     assert vehicle.brand == brand
-    assert vehicle.num_plate == num_plate
+    assert vehicle.num_plate == num_plate.replace(" ","")
     assert isinstance(vehicle.id, int)
     assert res.status_code == 201
     
@@ -82,4 +83,41 @@ def test_get_valid_by_num_plate_with_spaces(num_plate: str, client, vehicles):
 @pytest.mark.parametrize("num_plate", ["RMI53079", "RMI54321"])
 def test_post_duplicate_num_plate(num_plate, client, vehicles):
     res = client.post("/vehicles/", json={"num_plate": num_plate})
+    for vehicle in vehicles:
+        vehicle
     assert res.status_code == 409
+
+@pytest.mark.parametrize("brand, model", [("AUDI", "A5"), (None, "RANGER RAPTOR"), ("FIAT", None), (None, None)])
+def test_update_vehicle(brand, model, client, vehicles):
+    res = client.put(f"/vehicles/1", json={"brand": brand, "model": model})
+    vehicle_after = schemas.VehicleResponse(**res.json())
+    assert res.status_code == 200
+    assert vehicles[0].brand != vehicle_after.brand
+    assert vehicles[0].model != vehicle_after.model
+
+@pytest.mark.parametrize("brand", ["AUDI","FIAT"])
+def test_update_vehicle_one_parameter_v1(brand, client, vehicles):
+    res = client.put(f"/vehicles/1", json={"brand": brand})
+    vehicle_after = schemas.VehicleResponse(**res.json())
+    assert res.status_code == 200
+    assert vehicles[0].brand != vehicle_after.brand
+    assert vehicles[0].model == vehicle_after.model
+    assert vehicles[0].num_plate == vehicle_after.num_plate
+
+
+@pytest.mark.parametrize("model", ["A5", "PANDA"])
+def test_update_vehicle_one_parameter_v2(model, client, vehicles):
+    res = client.put(f"/vehicles/1", json={"model": model})
+    vehicle_after = schemas.VehicleResponse(**res.json())
+    assert res.status_code == 200
+    assert vehicles[0].brand == vehicle_after.brand
+    assert vehicles[0].model != vehicle_after.model
+    assert vehicles[0].num_plate == vehicle_after.num_plate
+
+
+@pytest.mark.parametrize("num_plate, brand, model", [("RMI53079", "AUDI", "A5"), ("RMI%2053079","FORD", "RANGER RAPTOR"), ("RMI   53079","FIAT", None) ])
+def test_update_vehicle_by_numplate(num_plate, brand, model, client, vehicles):
+    res = client.put(f"/vehicles/plates/{num_plate}", json={"brand": brand, "model": model})
+    vehicle_after = schemas.VehicleResponse(**res.json())
+    assert res.status_code == 200
+    assert vehicles[0].brand != vehicle_after.brand

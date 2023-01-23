@@ -7,6 +7,7 @@ from app import models
 from app.main import app
 from app.database import Base
 from app.database import get_db
+from app.logs import logger
 
 SQLALCHEMY_DATABASE_URL_TEST = f"postgresql://{settings().database_username}:{settings().database_password}@{settings().database_host}:{settings().database_port}/{settings().database_name}_tests"
 
@@ -26,7 +27,7 @@ def session():
         db.close()
 
 @pytest.fixture
-def client(session):
+def client(session):  #TODO: add type hinting
     # # run our code before we return our test
     # command.upgrade("head")
     def override_get_db():
@@ -45,4 +46,6 @@ def vehicles(client, session):
     for num_plate in num_plate_list:
         res = client.post("/vehicles/", json={"brand": "BMW", "model": "X3", "num_plate": num_plate})
         assert res.status_code == 201
+        logger.debug("added vehicles to the db")
+    # logger.debug(f"{session.query(models.Vehicle).all}")
     return session.query(models.Vehicle).all()

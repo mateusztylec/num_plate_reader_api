@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, validator
 
 
 class UserBase(BaseModel):
@@ -21,9 +21,17 @@ class UserCreateResponse(UserBase):
 class VehicleBase(BaseModel):
     brand: str | None
     model: str | None
-    num_plate: str
+    num_plate: str 
     user_id: UserBase | None = None
 
+    @validator("num_plate")
+    def cant_contain_spaces(cls, v):
+        return v.replace(" ", "")
+
+    @validator("num_plate", "brand", "model")
+    def upper_letter(cls, v):
+        if v is not None:
+            return v.upper()
 
 class VehicleCreate(VehicleBase):
     id: int
