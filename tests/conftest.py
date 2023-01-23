@@ -4,8 +4,9 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.settings import settings
 from app import models
-from app.main import app, get_db
+from app.main import app
 from app.database import Base
+from app.database import get_db
 
 SQLALCHEMY_DATABASE_URL_TEST = f"postgresql://{settings().database_username}:{settings().database_password}@{settings().database_host}:{settings().database_port}/{settings().database_name}_tests"
 
@@ -15,7 +16,7 @@ TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engin
 
 @pytest.fixture
 def session():
-    print("Hej z session")
+
     Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
@@ -28,7 +29,6 @@ def session():
 def client(session):
     # # run our code before we return our test
     # command.upgrade("head")
-    print(f"Hej z Client")
     def override_get_db():
         return session
 
@@ -40,7 +40,6 @@ def client(session):
 
 @pytest.fixture
 def vehicles(client, session):
-    print(f"Hej z Vehicle")
 
     num_plate_list = ["RMI53079", "RMI12345", "RMI54321"]
     for num_plate in num_plate_list:
