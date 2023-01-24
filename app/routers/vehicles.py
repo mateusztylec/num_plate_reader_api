@@ -47,13 +47,21 @@ def create_vehicle(vehicle: schemas.VehicleBase, db: Session = Depends(get_db)):
     return vehicle_db
 
 @router.put("/{id}", response_model=schemas.VehicleCreate, status_code=status.HTTP_200_OK)
-def update_vehicle(id: int, vehicle: schemas.VehicleBase, db: Session = Depends(get_db)):
+def update_vehicle_by_id(id: int, vehicle: schemas.VehicleUpdate, db: Session = Depends(get_db)):
     vehicle_query = db.query(models.Vehicle).filter(models.Vehicle.id == id)
-    logger.debug(f"{vehicle_query}")
     if not vehicle_query.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Vehicle with id {id} does not exist!")
-    vehicle_db = models.Vehicle(**vehicle.dict())
-    # logger.debug(f"{vehicle_db}")
-    vehicle_query.update(vehicle.dict())
+
+    vehicle_query.update(vehicle.dict(exclude_unset=True), synchronize_session=False)
+    db.commit()
+    return vehicle_query.first()
+
+@router.put("/plates/{num_plate}", response_model=schemas.VehicleCreate, status_code=status.HTTP_200_OK)
+def update_vehicle_by_num_plate(num_plate: str, vehicle: schemas.VehicleUpdate, db: Session = Depends(get_db)):  #TODO: proper validate num_plate entry
+    num_plate = num_plate.replace(" ", "")
+    vehicle_query = db.query(models.Vehicle).filter(models.Vehicle.num_plate == num_plate)
+    if not vehicle_query.first():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Vehicle with number plate {num_plate} does not exist!")
+    vehicle_query.update(vehicle.dict(exclude_unset=True), synchronize_session=False)
     db.commit()
     return vehicle_query.first()

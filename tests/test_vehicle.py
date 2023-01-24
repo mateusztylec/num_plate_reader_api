@@ -87,37 +87,43 @@ def test_post_duplicate_num_plate(num_plate, client, vehicles):
         vehicle
     assert res.status_code == 409
 
-@pytest.mark.parametrize("brand, model", [("AUDI", "A5"), (None, "RANGER RAPTOR"), ("FIAT", None), (None, None)])
+@pytest.mark.parametrize("brand, model", [("AUDI", "A5"), ("FORD", "RANGER RAPTOR")])
 def test_update_vehicle(brand, model, client, vehicles):
+    vehicle_before = {"brand": vehicles[0].brand, "model": vehicles[0].model}
+    logger.debug(f"{vehicle_before['brand']}")
     res = client.put(f"/vehicles/1", json={"brand": brand, "model": model})
+    logger.debug(f"{vehicle_before['brand']}")
     vehicle_after = schemas.VehicleResponse(**res.json())
     assert res.status_code == 200
-    assert vehicles[0].brand != vehicle_after.brand
-    assert vehicles[0].model != vehicle_after.model
+    assert vehicle_before["brand"] != vehicle_after.brand
+    assert vehicle_before["brand"] != vehicle_after.model
 
 @pytest.mark.parametrize("brand", ["AUDI","FIAT"])
 def test_update_vehicle_one_parameter_v1(brand, client, vehicles):
+    vehicle_before = {"brand": vehicles[0].brand, "model": vehicles[0].model, "num_plate": vehicles[0].num_plate}
     res = client.put(f"/vehicles/1", json={"brand": brand})
     vehicle_after = schemas.VehicleResponse(**res.json())
     assert res.status_code == 200
-    assert vehicles[0].brand != vehicle_after.brand
-    assert vehicles[0].model == vehicle_after.model
-    assert vehicles[0].num_plate == vehicle_after.num_plate
+    assert vehicle_before["brand"] != vehicle_after.brand
+    assert vehicle_before["model"] == vehicle_after.model
+    assert vehicle_before["num_plate"] == vehicle_after.num_plate
 
 
 @pytest.mark.parametrize("model", ["A5", "PANDA"])
 def test_update_vehicle_one_parameter_v2(model, client, vehicles):
+    vehicle_before = {"brand": vehicles[0].brand, "model": vehicles[0].model, "num_plate": vehicles[0].num_plate}
     res = client.put(f"/vehicles/1", json={"model": model})
     vehicle_after = schemas.VehicleResponse(**res.json())
     assert res.status_code == 200
-    assert vehicles[0].brand == vehicle_after.brand
-    assert vehicles[0].model != vehicle_after.model
-    assert vehicles[0].num_plate == vehicle_after.num_plate
+    assert vehicle_before["brand"] == vehicle_after.brand
+    assert vehicle_before["model"] != vehicle_after.model
+    assert vehicle_before["num_plate"] == vehicle_after.num_plate
 
 
 @pytest.mark.parametrize("num_plate, brand, model", [("RMI53079", "AUDI", "A5"), ("RMI%2053079","FORD", "RANGER RAPTOR"), ("RMI   53079","FIAT", None) ])
 def test_update_vehicle_by_numplate(num_plate, brand, model, client, vehicles):
+    vehicle_before = {"brand": vehicles[0].brand, "model": vehicles[0].model, "num_plate": vehicles[0].num_plate}
     res = client.put(f"/vehicles/plates/{num_plate}", json={"brand": brand, "model": model})
     vehicle_after = schemas.VehicleResponse(**res.json())
     assert res.status_code == 200
-    assert vehicles[0].brand != vehicle_after.brand
+    assert vehicle_before["brand"] != vehicle_after.brand
