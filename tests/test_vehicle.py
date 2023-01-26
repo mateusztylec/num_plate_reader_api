@@ -3,6 +3,7 @@ from app.main import *
 from app import schemas
 from app.logs import logger
 
+
 @pytest.mark.parametrize("brand, model, num_plate", [("BMW", "X3", "RMI12345"), ("MERCEDES-BENZ", "G CLASS", "KK 12343"), ("JEEP", "WRANGLER", "DBV123RV")])
 def test_post_valid_vehicle(brand, model, num_plate: str, client):
     res = client.post(f"/vehicles/", json={"brand": brand, "model": model, "num_plate": num_plate})
@@ -14,7 +15,7 @@ def test_post_valid_vehicle(brand, model, num_plate: str, client):
     assert res.status_code == 201
 
 @pytest.mark.parametrize("brand, model, num_plate", [("BMW", None, "RMI12345"), (None, "G CLASS", "KK 12343"), (None, None, "DBV123RV")])
-def test_post_vehicle_w_missing_values_v1(brand, model, num_plate, client):
+def test_post_w_missing_values_v1(brand, model, num_plate, client):
     """ Testing by passing arguments with None value"""
     res = client.post("/vehicles/", json={"brand": brand, "model": model, "num_plate": num_plate})  #parameter with value None
     # res_v2 = client.post("/vehicles/", json={k: v for k, v in json_body.items() if v is not None}) #w/o entries
@@ -26,9 +27,12 @@ def test_post_vehicle_w_missing_values_v1(brand, model, num_plate, client):
     assert isinstance(vehicle.id, int)
     assert res.status_code == 201
 
+def test_post_with_empty_num_plate_sting(client):
+    res = client.post("/vehicles/", json={"num_plate": "", "brand": "BMw"})
+    assert res.status_code == 422
 
 @pytest.mark.parametrize("brand, model, num_plate", [("BMW", None, "RMI12345"), (None, "G CLASS", "KK 12343"), (None, None, "DBV123RV")])
-def test_post_vehicle_w_missing_values_v2(brand, model, num_plate, client):
+def test_post_w_missing_values_v2(brand, model, num_plate, client):
     """ Testing w/o passing arguments where value is None"""
     json_body = {"brand": brand, "model": model, "num_plate": num_plate}
     res = client.post("/vehicles/", json={k: v for k, v in json_body.items() if v is not None}) #w/o parameter
@@ -41,7 +45,7 @@ def test_post_vehicle_w_missing_values_v2(brand, model, num_plate, client):
     assert res.status_code == 201
     
 @pytest.mark.parametrize("brand, model, num_plate", [("BMW", None, None), (None, "G CLASS", None), (None, None, None)])
-def test_num_plate_missing(brand, model, num_plate, client):
+def test_post_num_plate_missing(brand, model, num_plate, client):
     json_body = {"brand": brand, "model": model, "num_plate": num_plate}
     res_v1 = client.post("/vehicles/", json=json_body) #w parameter with value None
     res_v2 = client.post("/vehicles/", json={k: v for k, v in json_body.items() if v is not None}) #w/o parameter
@@ -127,3 +131,12 @@ def test_update_vehicle_by_numplate(num_plate, brand, model, client, vehicles):
     vehicle_after = schemas.VehicleResponse(**res.json())
     assert res.status_code == 200
     assert vehicle_before["brand"] != vehicle_after.brand
+
+def test_update_vehicle_by_num_plate_error(client, vehicles):
+    res = client.put("/vehicles/plates/RMI%2053079", json={"id": 11, "brand": "bmw"})
+    assert res.status_code == 422  #Don't know if correct #TODO: check
+
+
+def test_update_vehicle_by_id_error(client, vehicles):
+    res = client.put("/vehicles/1", json={"num_plate": "RMI1234", "brand": "bmw"})
+    assert res.status_code == 422  #Don't know if correct #TODO: check

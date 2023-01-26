@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from .database import Base
 
 
@@ -18,3 +18,10 @@ class Vehicle(Base):
     brand = Column(String, nullable=True)
     model = Column(String, nullable=True)
     num_plate = Column(String, nullable=False, unique=True)
+
+
+class Event(Base):
+    __tablename__ = "events"
+    id = Column(Integer, primary_key=True, nullable=False)
+    vehicle_id = Column(Integer, ForeignKey(Vehicle.id, ondelete="CASCADE"))
+    date = Column(DateTime, nullable = False)

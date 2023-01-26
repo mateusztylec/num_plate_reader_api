@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, validator
-
+from datetime import datetime
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -22,7 +22,7 @@ class VehicleBase(BaseModel):
     brand: str | None = None
     model: str | None = None
     num_plate: str 
-    user_id: UserBase | None = None
+    user_id: int | None = None
 
     @validator("num_plate")
     def cant_contain_spaces(cls, v):
@@ -67,3 +67,12 @@ class VehicleUpdate(VehicleBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
+
+
+class Event(BaseModel):
+    id: int
+    vehicle_id: int
+    date: datetime
+
+    class Config:
+        orm_mode = True

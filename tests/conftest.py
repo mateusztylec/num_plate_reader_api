@@ -49,3 +49,7 @@ def vehicles(client, session):
         logger.debug("added vehicles to the db")
     # logger.debug(f"{session.query(models.Vehicle).all}")
     return session.query(models.Vehicle).all()
+
+
+# @pytest.fixture
+# def events
