@@ -1,5 +1,6 @@
 from fastapi import FastAPI, Depends
 from .routers import events, vehicles, users
+
 app = FastAPI()
 
 app.include_router(vehicles.router)

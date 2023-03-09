@@ -1,14 +1,35 @@
 from pydantic import BaseModel, EmailStr, validator
 from datetime import datetime
+from .utils import get_password_hash
 
 class UserBase(BaseModel):
     email: EmailStr
     name: str
     surname: str
+    # @validator("email")
+    # def create_hash(cls, v):
+    #     return v.lower()
 
+    @validator("name")
+    def name_lower_case(cls, v: str):
+        return v.lower()
+
+    @validator("surname")
+    def surname_lower_case(cls, v: str):
+        return v.lower()
+    
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
 
 class UserCreate(UserBase):
     password: str
+
+    @validator("password")
+    def create_hash(cls, v):
+        return get_password_hash(v)
 
 
 class UserCreateResponse(UserBase):

@@ -1,7 +1,7 @@
 import pytest
-from app.main import *
-from app import schemas
-from app.logs import logger
+from src.main import *
+from src import schemas
+from src.logs import logger
 
 
 @pytest.mark.parametrize("brand, model, num_plate", [("BMW", "X3", "RMI12345"), ("MERCEDES-BENZ", "G CLASS", "KK 12343"), ("JEEP", "WRANGLER", "DBV123RV")])

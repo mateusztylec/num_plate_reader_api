@@ -2,12 +2,13 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.settings import settings
-from app import models
-from app.main import app
-from app.database import Base
-from app.database import get_db
-from app.logs import logger
+from src.settings import settings
+from src import models
+from src.main import app
+from src.database import Base
+from src.database import get_db
+from src.logs import logger
+from datetime import datetime
 
 SQLALCHEMY_DATABASE_URL_TEST = f"postgresql://{settings().database_username}:{settings().database_password}@{settings().database_host}:{settings().database_port}/{settings().database_name}_tests"
 
@@ -50,6 +51,16 @@ def vehicles(client, session):
     # logger.debug(f"{session.query(models.Vehicle).all}")
     return session.query(models.Vehicle).all()
 
-
 # @pytest.fixture
-# def events
+# def users(session):
+#     users = [{}]
+
+@pytest.fixture
+def events(vehicles, session):
+    for _ in range(3):
+        event = models.Event(vehicle_id=1)
+        session.add(event)
+        session.commit()
+    
+
+    
