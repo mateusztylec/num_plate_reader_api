@@ -4,12 +4,14 @@ from ..database import get_db
 from sqlalchemy.orm import Session
 from ..logs import logger
 from sqlalchemy.exc import IntegrityError
+from ..utils import oauth2_scheme
+from ..oauth import get_user_id
 
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
 
 @router.get("/plates/{num_plate}", response_model=schemas.VehicleResponse, status_code=status.HTTP_200_OK)
-def get_vehicle_by_num_plate(num_plate: str, db: Session = Depends(get_db)):
+def get_vehicle_by_num_plate(num_plate: str, user_id: int = Depends(get_user_id), db: Session = Depends(get_db)):
     num_plate = num_plate.replace(" ", "")
     vehicle = db.query(models.Vehicle).filter(models.Vehicle.num_plate == num_plate).first()
     if not vehicle:
@@ -19,13 +21,13 @@ def get_vehicle_by_num_plate(num_plate: str, db: Session = Depends(get_db)):
 
 
 @router.get("/", response_model=list[schemas.VehicleResponse], status_code=status.HTTP_200_OK)
-def get_vehicles(db: Session = Depends(get_db), limit: int = 5, skip: int = 0):
+def get_vehicles(db: Session = Depends(get_db), user_id: int = Depends(get_user_id), limit: int = 5, skip: int = 0):
     res_lst = db.query(models.Vehicle).limit(limit).offset(skip).all()
     return res_lst
 
 
 @router.get("/{id}", response_model=schemas.VehicleResponse, status_code=status.HTTP_200_OK)
-def get_vehicle_by_id(id: int, db: Session = Depends(get_db)):
+def get_vehicle_by_id(id: int, user_id: int = Depends(get_user_id), db: Session = Depends(get_db)):
     vehicle = db.query(models.Vehicle).filter(models.Vehicle.id == id).first()
     if not vehicle:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Vehicle with id {id} does not exist")
@@ -33,7 +35,7 @@ def get_vehicle_by_id(id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/", response_model=schemas.VehicleCreate, status_code=status.HTTP_201_CREATED)
-def create_vehicle(vehicle: schemas.VehicleBase, db: Session = Depends(get_db)):
+def create_vehicle(vehicle: schemas.VehicleBase, user_id: int = Depends(get_user_id), db: Session = Depends(get_db)):
     vehicle_db = models.Vehicle(**vehicle.dict())
     try:
         db.add(vehicle_db)  #TODO: check if db.rollback() is needed
@@ -47,7 +49,7 @@ def create_vehicle(vehicle: schemas.VehicleBase, db: Session = Depends(get_db)):
     return vehicle_db
 
 @router.put("/{id}", response_model=schemas.VehicleCreate, status_code=status.HTTP_200_OK)
-def update_vehicle_by_id(id: int, vehicle: schemas.VehicleUpdate, db: Session = Depends(get_db)):
+def update_vehicle_by_id(id: int, vehicle: schemas.VehicleUpdate, user_id: int = Depends(get_user_id), db: Session = Depends(get_db)):
     vehicle_query = db.query(models.Vehicle).filter(models.Vehicle.id == id)
     if not vehicle_query.first():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Vehicle with id {id} does not exist!")
@@ -57,7 +59,7 @@ def update_vehicle_by_id(id: int, vehicle: schemas.VehicleUpdate, db: Session = 
     return vehicle_query.first()
 
 @router.put("/plates/{num_plate}", response_model=schemas.VehicleCreate, status_code=status.HTTP_200_OK)
-def update_vehicle_by_num_plate(num_plate: str, vehicle: schemas.VehicleUpdate, db: Session = Depends(get_db)):  #TODO: proper validate num_plate entry
+def update_vehicle_by_num_plate(num_plate: str, vehicle: schemas.VehicleUpdate, user_id: int = Depends(get_user_id), db: Session = Depends(get_db)):  #TODO: proper validate num_plate entry
     num_plate = num_plate.replace(" ", "")
     vehicle_query = db.query(models.Vehicle).filter(models.Vehicle.num_plate == num_plate)
     if not vehicle_query.first():

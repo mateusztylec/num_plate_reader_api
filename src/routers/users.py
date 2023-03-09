@@ -4,9 +4,10 @@ from ..database import get_db
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from ..utils import verify_password, get_password_hash
+from ..utils import oauth2_scheme
 from ..authenticate import authenticate_user
 from ..logs import logger
+from ..oauth import create_access_token
 
 router = APIRouter(prefix="/users", tags=["users"])
 
@@ -37,8 +38,9 @@ def create_user(user_to_create: schemas.UserCreate, db: Session = Depends(get_db
 @router.post("/login/", response_model=schemas.Token, status_code=status.HTTP_202_ACCEPTED)
 def get_token(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     logger.debug(f"usr: {form_data.username}, pwd: {form_data.password}")
-    user = schemas.UserLogin(username=form_data.username, password=form_data.password)
-    if not authenticate_user(user, db):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorect username or password")
-    return {"token_type": "token123", "access_token": "123"}
+    user = authenticate_user(schemas.UserLogin(username=form_data.username, password=form_data.password), db)
+    if not user:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid username or password", headers={"WWW-Authenticate": "Bearer"})
+    token = create_access_token({"user_id": user.id})
+    return {"token_type": "Bearer", "access_token": token}
 

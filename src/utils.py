@@ -4,8 +4,11 @@ from fastapi import Depends
 from .database import get_db
 from sqlalchemy.orm import Session
 from .logs import logger
+from fastapi.security import OAuth2PasswordBearer
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
 def get_password_hash(password: str):
     logger.debug(f"password to create hash: {password}")
