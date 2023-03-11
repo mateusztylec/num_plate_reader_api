@@ -7,14 +7,18 @@ import logging
 
 SQLALCHEMY_DATABASE_URL = f"postgresql://{settings().database_username}:{settings().database_password}@{settings().database_host}:{settings().database_port}/{settings().database_name}"
 
-engine = create_engine(SQLALCHEMY_DATABASE_URL) # tworzymy silnik xd
+engine = create_engine(SQLALCHEMY_DATABASE_URL)  # tworzymy silnik xd
 
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)  # database session
+SessionLocal = sessionmaker(
+    autocommit=False,
+    autoflush=False,
+    bind=engine)  # database session
 
 Base = declarative_base()  # deklarujemy baze, z tego korzystamy przy tworzeniu tabel
 
 # logging.basicConfig()
 # logging.getLogger("sqlalchemy.engine").setLevel(logging.DEBUG)
+
 
 def get_db():
     logger.info("Get db")

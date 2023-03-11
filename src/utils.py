@@ -10,13 +10,14 @@ from fastapi.security import OAuth2PasswordBearer
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="login", 
+    tokenUrl="login",
     scopes={
-        Role.ADMIN['name']: Role.ADMIN['description'], 
-        Role.GUEST['name']: Role.GUEST['description'], 
+        Role.ADMIN['name']: Role.ADMIN['description'],
+        Role.GUEST['name']: Role.GUEST['description'],
         Role.USER['name']: Role.USER['description']
     }
 )
+
 
 def get_password_hash(password: str) -> str:
     '''
@@ -30,6 +31,7 @@ def get_password_hash(password: str) -> str:
     logger.debug(f"password to create hash: {password}")
     return pwd_context.hash(password)
 
+
 def verify_password(raw_password: str, hashed_password: str) -> bool:
     '''
     Verifies password
@@ -38,4 +40,3 @@ def verify_password(raw_password: str, hashed_password: str) -> bool:
     :rtype: bool
     '''
     return pwd_context.verify(raw_password, hashed_password)
-

@@ -1,6 +1,7 @@
 from pydantic import BaseSettings
 from functools import lru_cache
 
+
 class Settings(BaseSettings):
     database_username: str
     database_password: str
@@ -11,6 +12,7 @@ class Settings(BaseSettings):
     class Config:
         env_file = ".env"
 
+
 class JWTSettings(BaseSettings):
     secret_key: str
     algorithm: str
@@ -19,9 +21,11 @@ class JWTSettings(BaseSettings):
     class Config:
         env_file = ".env"
 
+
 @lru_cache()
 def settings():
     return Settings()
+
 
 @lru_cache()
 def jwtsettings():

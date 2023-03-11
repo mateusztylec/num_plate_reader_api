@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, ForeignKey, DateTime
 from ..database import Base
 from .users import User
 
+
 class Vehicle(Base):
     __tablename__ = "vehicles"
     id = Column(Integer, primary_key=True, nullable=False)
