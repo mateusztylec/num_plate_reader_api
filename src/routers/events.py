@@ -3,7 +3,7 @@ from ..schemas import Event, VehicleBase
 # from sqlalchemy import 
 from ..database import get_db
 from sqlalchemy.orm import Session
-from .. import models
+from ..models import models
 
 
 router = APIRouter(prefix="/events", tags=["events"])
@@ -19,7 +19,6 @@ def get_events(id: int, db: Session = Depends(get_db)):
     events = db.query(models.Event).filter(models.Event.id == id).first()
     if not events:
         raise HTTPException(status.HTTP_404_NOT_FOUND, f"There is not event with id {id}")
-    #  print(f"{events[0].id}, v_id:{events[0].vehicle_id}, {events[0].date}" )
     return events
 
 @router.get("/vehicles/{id}", response_model=list[Event], status_code=status.HTTP_200_OK)

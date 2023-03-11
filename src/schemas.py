@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr, validator
 from datetime import datetime
 from .utils import get_password_hash
+from .role import Role
 
 class UserBase(BaseModel):
     email: EmailStr
@@ -38,6 +39,21 @@ class UserCreateResponse(UserBase):
     class Config:
         orm_mode = True
 
+class UserBaseForAdmin(UserBase):
+    scope: str
+
+    @validator("scope")
+    def upper_letters(cls, v):
+        return v.upper()
+    
+    @validator("scope")
+    def only_available_scope(cls, v):
+        available_scopes = map(lambda val: val['name'], Role)
+        if v not in available_scopes:
+            raise ValueError(f"There isn't scope named {v}")   
+
+class UserUpdateByAdmin(UserCreate, UserBaseForAdmin):
+    pass
 
 class VehicleBase(BaseModel):
     brand: str | None = None
@@ -89,6 +105,10 @@ class Token(BaseModel):
     access_token: str
     token_type: str
 
+class TokenPayload(BaseModel):
+    user_id: int
+    scope: str
+    exp: int
 
 class Event(BaseModel):
     id: int
