@@ -6,11 +6,12 @@ from sqlalchemy.orm import Session
 from ..logs import logger
 from sqlalchemy.exc import IntegrityError
 from ..utils import oauth2_scheme
-from ..oauth import get_user
+from ..oauth import get_active_user
 from ..role import Role
 
 
 router = APIRouter(prefix="/vehicles", tags=["vehicles"])
+
 
 
 @router.get("/plates/{num_plate}",
@@ -18,17 +19,12 @@ router = APIRouter(prefix="/vehicles", tags=["vehicles"])
             status_code=status.HTTP_200_OK)
 def get_vehicle_by_num_plate(
         num_plate: str,
-        user=Security(
-            get_user,
-            scopes=[
-                Role.ADMIN["name"],
-                Role.USER["name"]]),
+        user=Security(get_active_user, scopes=[Role.USER.name]),
         db: Session = Depends(get_db)):
     '''
     Retrieve vehicle info.
     '''
-    num_plate = num_plate.replace(
-        " ", "")  # FIXME user can see only vehicles added by him/her
+    num_plate = num_plate.replace(" ", "")  # FIXME user can see only vehicles added by him/her
     vehicle = db.query(models.Vehicle).filter(
         models.Vehicle.num_plate == num_plate).first()
     if not vehicle:
@@ -43,7 +39,7 @@ def get_vehicle_by_num_plate(
             status_code=status.HTTP_200_OK)
 def get_vehicles(
         db: Session = Depends(get_db),
-        user: int = Depends(get_user),
+        user: int = Depends(get_active_user),
         limit: int = 5,
         skip: int = 0):
     res_lst = db.query(models.Vehicle).limit(limit).offset(skip).all()
@@ -54,7 +50,7 @@ def get_vehicles(
             status_code=status.HTTP_200_OK)
 def get_vehicle_by_id(
         id: int,
-        user: int = Depends(get_user),
+        user = Security(get_active_user, scopes=[Role.USER.name]),
         db: Session = Depends(get_db)):
     vehicle = db.query(models.Vehicle).filter(models.Vehicle.id == id).first()
     if not vehicle:
@@ -68,7 +64,7 @@ def get_vehicle_by_id(
              status_code=status.HTTP_201_CREATED)
 def create_vehicle(
         vehicle: schemas.VehicleBase,
-        user: int = Depends(get_user),
+        user = Security(get_active_user, scopes=[Role.USER.name]),
         db: Session = Depends(get_db)):
     vehicle_db = models.Vehicle(**vehicle.dict())
     try:
@@ -92,7 +88,7 @@ def create_vehicle(
 def update_vehicle_by_id(
         id: int,
         vehicle: schemas.VehicleUpdate,
-        user: int = Depends(get_user),
+        user = Security(get_active_user, scopes=[Role.USER.name]),
         db: Session = Depends(get_db)):
     vehicle_query = db.query(models.Vehicle).filter(models.Vehicle.id == id)
     if not vehicle_query.first():
@@ -101,8 +97,7 @@ def update_vehicle_by_id(
             detail=f"Vehicle with id {id} does not exist!")
 
     vehicle_query.update(
-        vehicle.dict(
-            exclude_unset=True),
+        vehicle.dict(exclude_unset=True),
         synchronize_session=False)
     db.commit()
     return vehicle_query.first()
@@ -115,19 +110,14 @@ def update_vehicle_by_id(
 def update_vehicle_by_num_plate(
         num_plate: str,
         vehicle: schemas.VehicleUpdate,
-        user: int = Depends(get_user),
+        user = Security(get_active_user, scopes=[Role.USER.name]),
         db: Session = Depends(get_db)):
     num_plate = num_plate.replace(" ", "")
-    vehicle_query = db.query(
-        models.Vehicle).filter(
-        models.Vehicle.num_plate == num_plate)
+    vehicle_query = db.query(models.Vehicle).filter(models.Vehicle.num_plate == num_plate)
     if not vehicle_query.first():
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail=f"Vehicle with number plate {num_plate} does not exist!")
-    vehicle_query.update(
-        vehicle.dict(
-            exclude_unset=True),
-        synchronize_session=False)
+    vehicle_query.update(vehicle.dict(exclude_unset=True),synchronize_session=False)
     db.commit()
     return vehicle_query.first()

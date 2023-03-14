@@ -9,7 +9,7 @@ from sqlalchemy.exc import IntegrityError
 from ..utils import oauth2_scheme
 from ..authenticate import authenticate_user
 from ..logs import logger
-from ..oauth import create_access_token, get_user
+from ..oauth import create_access_token, get_active_user
 from ..role import Role
 
 router = APIRouter(prefix="/users", tags=["users"])
@@ -20,10 +20,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 def create_user(
         user_to_create: schemas.UserCreateRequest,
         db: Session = Depends(get_db)):
-    # user_lowercase = schemas.UserBase(**{_: v.lower() for _, v in user_to_create.dict().items()})  #TODO: jak to działa bez klucza
-    # new_user = schemas.UserCreate(password=user_to_create.password, **user_lowercase.dict())
     user_to_create: dict = user_to_create.dict()
-    # FIXME: must be better option for this!
     user_to_create.update({"role_id": 1})
     user = models.User(**user_to_create)
     db.add(user)
@@ -41,17 +38,17 @@ def create_user(
     return user
 
 
-@router.post("/login/", response_model=schemas.Token,
+@router.post("/login/",
+             response_model=schemas.Token,
              status_code=status.HTTP_202_ACCEPTED)
 def get_token(
         form_data: OAuth2PasswordRequestForm = Depends(),
         db: Session = Depends(get_db)):
     logger.debug(f"usr: {form_data.username}, pwd: {form_data.password}")
-    user = authenticate_user(
-        schemas.UserLogin(
-            username=form_data.username,
-            password=form_data.password),
-        db)
+    user = authenticate_user(schemas.UserLogin(
+                                username=form_data.username,
+                                password=form_data.password),
+                            db)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -68,10 +65,8 @@ def get_token(
             status_code=status.HTTP_200_OK)
 # scopes must be list
 def get_users(
-        user=Security(
-            get_user,
-            scopes=[
-                Role.ADMIN["name"]]),
+        user=Depends(
+            get_active_user),
         db: Session = Depends(get_db)):
     '''
     Admin can see all users
@@ -89,15 +84,11 @@ def get_users(
             status_code=status.HTTP_200_OK)
 def update_user(
         user_to_update: schemas.UserUpdateAdminRequest,
-        user=Security(
-            get_users,
-            scopes=Role.ADMIN["name"]),
+        user=Depends(
+            get_active_user),
         db: Session = Depends(get_db)):
     '''
     Admin can update user by id. Id and Email can't be updated
-
-    :returns: user info with updated information
-    :rtype: schemas.UserBaseForAdmin, pydantic base model
     '''
     user_query = db.query(models.User).filter(
         models.User.email == user_to_update.email)
@@ -111,3 +102,11 @@ def update_user(
         synchronize_session=False)
     db.commit()
     return user_query.first()
+
+@router.get("/me/", 
+            response_model=schemas.UserCreatedResponse, 
+            status_code=status.HTTP_200_OK)
+def get_user_info(user: schemas.TokenPayload = Security(get_active_user, scopes=[Role.USER.name]), 
+                  db: Session = Depends(get_db)):
+    '''Return information about user'''
+    return db.query(models.User).filter(models.User.id == user.user_id).first()

@@ -6,7 +6,7 @@ event_path = "/events/"
 
 
 @pytest.mark.parametrize("limit, skip", [(5, 0), (10, 5), (3, 2)])
-def test_get_correct_event(limit, skip, client, events):
+def test_get_correct_event(limit, skip, client, events, users):
     res = client.get(event_path + f"?limit={limit}&skip={skip}")
     assert res.status_code == 200
 

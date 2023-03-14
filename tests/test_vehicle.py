@@ -1,45 +1,38 @@
 import pytest
 from src.main import *
+from requests import Request
 from src import schemas
 from src.logs import logger
 
 
 @pytest.mark.parametrize("brand, model, num_plate",
-                         [("BMW",
-                           "X3",
-                           "RMI12345"),
-                          ("MERCEDES-BENZ",
-                           "G CLASS",
-                           "KK 12343"),
-                             ("JEEP",
-                              "WRANGLER",
-                              "DBV123RV")])
-def test_post_valid_vehicle(brand, model, num_plate: str, client):
-    res = client.post(
-        f"/vehicles/",
-        json={
-            "brand": brand,
-            "model": model,
-            "num_plate": num_plate})
+                         [("BMW", "X3", "RMI12345"),
+                          ("MERCEDES-BENZ","G CLASS","KK 12343"),
+                          ("JEEP", "WRANGLER", "DBV123RV")])
+def test_post_valid_vehicle(brand: str, 
+                            model: str, 
+                            num_plate: str, 
+                            client: Request, 
+                            authorized_user):
+    res = authorized_user.post(
+                    f"/vehicles/",
+                    json={
+                        "brand": brand,
+                        "model": model,
+                        "num_plate": num_plate})
     # rozpakowywujemy response na key=value wartosci
+    assert res.status_code == 201
     vehicle = schemas.VehicleCreate(**res.json())
     assert vehicle.model == model
     assert vehicle.brand == brand
     assert vehicle.num_plate == num_plate.replace(" ", "")
     assert isinstance(vehicle.id, int)
-    assert res.status_code == 201
 
 
 @pytest.mark.parametrize("brand, model, num_plate",
-                         [("BMW",
-                           None,
-                           "RMI12345"),
-                          (None,
-                           "G CLASS",
-                           "KK 12343"),
-                             (None,
-                              None,
-                              "DBV123RV")])
+                       [("BMW", None, "RMI12345"),
+                        (None, "G CLASS", "KK 12343"),
+                        (None, None,"DBV123RV")])
 def test_post_w_missing_values_v1(brand, model, num_plate, client):
     """ Testing by passing arguments with None value"""
     res = client.post(
@@ -217,8 +210,7 @@ def test_update_vehicle_by_numplate(num_plate, brand, model, client, vehicles):
 
 
 def test_update_vehicle_by_num_plate_error(client, vehicles):
-    res = client.put(
-        "/vehicles/plates/RMI%2053079",
+    res = client.put("/vehicles/plates/RMI%2053079",
         json={
             "id": 11,
             "brand": "bmw"})

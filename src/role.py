@@ -1,24 +1,23 @@
-class Role:
-    GUEST = {
-        "name": "GUEST",
-        "description": "Guest account"
-    }
-    USER = {
-        "name": "USER",
-        "description": "Normal user account"
-    }
-    ADMIN = {
-        "name": "ADMIN",
-        "description": "Admin account"
-    }
+from .logs import logger
 
-    def __getattr__(self, name):
-        if name in self.GUEST:
-            return self.GUEST[name]
-        elif name in self.USER:
-            return self.USER[name]
-        elif name in self.ADMIN:
-            return self.ADMIN[name]
-        else:
-            raise AttributeError(
-                f"{self.__class__.__name__} object has no attribute '{name}'")
+class SingleRole:
+    def __init__(self, name: str, id: int, description: str):
+        self.name = name
+        self.id = id
+        self.description = description
+
+
+class Role:
+    GUEST = SingleRole(name="GUEST", 
+                       id="0", 
+                       description="Guest account")
+    USER = SingleRole(name="USER", 
+                       id="1", 
+                       description="Normal user account")
+    ADMIN = SingleRole(name="ADMIN", 
+                       id="2", 
+                       description="Admin account")
+
+    @classmethod
+    def attributes(cls) -> list[SingleRole]:
+        return [val for key, val in vars(cls).items() if not (key.startswith("__") or key == "attributes")]
