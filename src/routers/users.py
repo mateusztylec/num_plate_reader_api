@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Security, status, Depends, HTTPException
+from fastapi import APIRouter, Security, Response, status, Depends, HTTPException
 from .. import schemas
 from ..models import models
 from ..role import Role
@@ -13,6 +13,7 @@ from ..oauth import create_access_token, get_active_user
 from ..role import Role
 
 router = APIRouter(prefix="/users", tags=["users"])
+
 
 
 @router.post("/", response_model=schemas.UserCreatedResponse,

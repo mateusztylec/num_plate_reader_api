@@ -106,7 +106,7 @@ class VehicleBase(BaseModel):
         return v  # return v is important coz w/o return field gets null value
 
 
-class VehicleCreate(VehicleBase):
+class VehicleCreated(VehicleBase):
     id: int
 
     class Config:

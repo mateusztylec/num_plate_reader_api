@@ -46,6 +46,7 @@ def verify_access_token(token: str) -> TokenPayload:
     :returns: payload
     :rtype: schemas.TokenPayload, pydantic base model
     '''
+    logger.debug("verification access token")
     try:
         payload = jwt.decode(
             token,
@@ -72,6 +73,7 @@ def get_user(security_scopes: SecurityScopes,
     :returns: jwt token payload
     :rtype: TokenPayload, pydantic basic model
     '''
+    logger.debug("get_user funcion works")
     token_payload = verify_access_token(token)
     if security_scopes.scopes:
         authenticate_value = f'Bearer scope="{security_scopes.scope_str}"'
@@ -88,4 +90,5 @@ def get_active_user(current_user: TokenPayload = Security(get_user, scopes=[Role
     Wraper to get_user function. Added to scope role admin by default
     :param current_user: 
     '''
+    logger.debug("funckja get_active_user działa")
     return current_user

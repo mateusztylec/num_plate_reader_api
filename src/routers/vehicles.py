@@ -60,12 +60,13 @@ def get_vehicle_by_id(
     return vehicle
 
 
-@router.post("/", response_model=schemas.VehicleCreate,
+@router.post("/", response_model=schemas.VehicleCreated,
              status_code=status.HTTP_201_CREATED)
 def create_vehicle(
         vehicle: schemas.VehicleBase,
         user = Security(get_active_user, scopes=[Role.USER.name]),
         db: Session = Depends(get_db)):
+    logger.debug("Post /vehicle/ uruchomiony")
     vehicle_db = models.Vehicle(**vehicle.dict())
     try:
         db.add(vehicle_db)  # TODO: check if db.rollback() is needed
@@ -83,7 +84,7 @@ def create_vehicle(
     return vehicle_db
 
 
-@router.put("/{id}", response_model=schemas.VehicleCreate,
+@router.put("/{id}", response_model=schemas.VehicleCreated,
             status_code=status.HTTP_200_OK)
 def update_vehicle_by_id(
         id: int,
@@ -104,7 +105,7 @@ def update_vehicle_by_id(
 
 
 @router.put("/plates/{num_plate}",
-            response_model=schemas.VehicleCreate,
+            response_model=schemas.VehicleCreated,
             status_code=status.HTTP_200_OK)
 # TODO: proper validate num_plate entry
 def update_vehicle_by_num_plate(

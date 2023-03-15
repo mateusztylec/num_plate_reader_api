@@ -6,6 +6,7 @@ from src.settings import settings
 from src.models import models
 from src.main import app
 from requests import Request
+from src.oauth import verify_access_token
 from src.database import Base
 from src.role import Role
 from src.database import get_db
@@ -53,15 +54,13 @@ def client(session):  # TODO: add type hinting
 @pytest.fixture
 def vehicles(client, session):
     num_plate_list = ["RMI53079", "RMI12345", "RMI54321"]
+    logger.debug("try add vehicle to db")
     for num_plate in num_plate_list:
-        res = client.post(
-            "/vehicles/",
-            json={
-                "brand": "BMW",
-                "model": "X3",
-                "num_plate": num_plate})
-        assert res.status_code == 201
-        logger.debug("added vehicles to the db")
+        vehicle_schemas = schemas.VehicleBase(brand="BMW",
+                                        model="X3",
+                                        num_plate=num_plate)
+        session.add(models.Vehicle(**vehicle_schemas.dict()))
+        session.commit()
     return session.query(models.Vehicle).all()
 
 def add_role_to_db(session):
@@ -74,20 +73,21 @@ def add_role_to_db(session):
 @pytest.fixture
 def user(session, client):
     add_role_to_db(session)
-
+    logger.debug("Added role to db")
     user_role_admin = { "email": "user@gmail.com",
                         "name": "John",
-                        "surname":"Kowalksi",
+                        "surname":"Kowalski",
                         "password": get_password_hash("Zaq12wsx"),
                         "role_id": Role.ADMIN.id}
     user = models.User(**user_role_admin)
     session.add(user)
     session.commit()
+    logger.debug("added user to db")
     return user_role_admin
 
 @pytest.fixture
 def token(client: Request, user):
-    
+    logger.debug("trying to create otken")
     response = client.post("/users/login/", 
                           data={"username": user["email"],
                                 "password": "Zaq12wsx"})
@@ -95,13 +95,18 @@ def token(client: Request, user):
         raise Exception("Invalid credentials!")
     else:
         response = schemas.Token(**response.json())
+        logger.debug("token created")
         return response.access_token
 
 @pytest.fixture
-def authorized_user(client: Request, token):
-    logger.debug(token)
+def authorized_user(client, token):
+    logger.debug("trying to authorized_user")
+    token_info = verify_access_token(token)
+    logger.debug(token_info)
+    logger.debug("token verified")
     client.headers = {**client.headers, 
-                      "WWW-Authenticate": f"Bearer {token} "}
+                      "Authorization": f"Bearer {token}"}
+    logger.debug(client.headers)
     return client
 
     
